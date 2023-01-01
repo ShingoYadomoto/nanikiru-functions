@@ -7,5 +7,5 @@ import (
 
 func main() {
 	h := handler.Handler{}
-	lambda.Start(h.GetRandomQuestionLambdaHandler)
+	lambda.Start(h.GetAnswerLambdaHandler)
 }

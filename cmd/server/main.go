@@ -13,7 +13,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/questions", h.CORSMiddleware(h.GetRandomQuestionHandler)).Methods("GET", "OPTIONS")
-	r.HandleFunc(`/questions/{question_id:\d+}`, h.CORSMiddleware(h.PostAnswerHandler)).Methods("POST", "OPTIONS")
+	r.HandleFunc(`/questions/{question_id:\d+}`, h.CORSMiddleware(h.GetAnswerHandler)).Methods("GET", "OPTIONS")
 
 	log.Fatal(http.ListenAndServe(":8888", r))
 }
