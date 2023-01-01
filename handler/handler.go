@@ -2,14 +2,11 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"log"
 	"net/http"
-	"net/url"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/data"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/gorilla/mux"
 )
 
 type (
@@ -94,19 +91,19 @@ const excludeIDQueryKey = "exclude_id"
 
 func (h Handler) GetRandomQuestionHandler(rw http.ResponseWriter, r *http.Request) {
 	h.response(rw, func() ([]byte, error) {
-		excludeIDCSV := r.URL.Query().Get(excludeIDQueryKey)
+		excludeIDStr := r.URL.Query().Get(excludeIDQueryKey)
 
 		bg := BodyGenerator{}
-		return bg.GetRandomQuestion(excludeIDCSV)
+		return bg.GetRandomQuestion(excludeIDStr)
 	})
 }
 
 func (h Handler) GetRandomQuestionLambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
 	return h.responseLambda(func() ([]byte, error) {
-		excludeIDCSV := request.QueryStringParameters[excludeIDQueryKey]
+		excludeIDStr := request.QueryStringParameters[excludeIDQueryKey]
 
 		bg := BodyGenerator{}
-		return bg.GetRandomQuestion(excludeIDCSV)
+		return bg.GetRandomQuestion(excludeIDStr)
 	})
 }
 
@@ -118,24 +115,12 @@ const (
 func (h Handler) GetAnswerHandler(rw http.ResponseWriter, r *http.Request) {
 	h.response(rw, func() ([]byte, error) {
 		var (
-			idStr     = mux.Vars(r)[questionIDQueryKey]
+			idStr     = r.URL.Query().Get(questionIDQueryKey)
 			answerStr = r.URL.Query().Get(answerQueryKey)
-
-			request = AnswerRequest{}
 		)
 
-		decodedAnswerStr, err := url.QueryUnescape(answerStr)
-		if err != nil {
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(decodedAnswerStr), &request)
-		if err != nil {
-			return nil, err
-		}
-
 		bg := BodyGenerator{}
-		return bg.GetAnswerHandler(idStr, request)
+		return bg.GetAnswerHandler(idStr, answerStr)
 	})
 }
 
@@ -144,20 +129,9 @@ func (h Handler) GetAnswerLambdaHandler(ctx context.Context, request events.APIG
 		var (
 			idStr     = request.QueryStringParameters[questionIDQueryKey]
 			answerStr = request.QueryStringParameters[answerQueryKey]
-			request   = AnswerRequest{}
 		)
 
-		decodedAnswerStr, err := url.QueryUnescape(answerStr)
-		if err != nil {
-			return nil, err
-		}
-
-		err = json.Unmarshal([]byte(decodedAnswerStr), &request)
-		if err != nil {
-			return nil, err
-		}
-
 		bg := BodyGenerator{}
-		return bg.GetAnswerHandler(idStr, request)
+		return bg.GetAnswerHandler(idStr, answerStr)
 	})
 }

@@ -5,15 +5,13 @@ import (
 	"net/http"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/handler"
-	"github.com/gorilla/mux"
 )
 
 func main() {
 	h := handler.Handler{}
 
-	r := mux.NewRouter()
-	r.HandleFunc("/questions", h.CORSMiddleware(h.GetRandomQuestionHandler)).Methods("GET", "OPTIONS")
-	r.HandleFunc(`/questions/{question_id:\d+}`, h.CORSMiddleware(h.GetAnswerHandler)).Methods("GET", "OPTIONS")
+	http.HandleFunc("/question", h.CORSMiddleware(h.GetRandomQuestionHandler))
+	http.HandleFunc(`/answer`, h.CORSMiddleware(h.GetAnswerHandler))
 
-	log.Fatal(http.ListenAndServe(":8888", r))
+	log.Fatal(http.ListenAndServe(":8888", nil))
 }

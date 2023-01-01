@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/json"
-	"strings"
+	"net/url"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/data"
 )
@@ -29,23 +29,18 @@ func (bg BodyGenerator) convertPaiList(pl []data.Pai) ([]QuestionPai, error) {
 	return paiList, nil
 }
 
-func (bg BodyGenerator) GetRandomQuestion(excludeIDCSV string) ([]byte, error) {
-	var (
-		excludeIDStrList = strings.Split(excludeIDCSV, ",")
-		excludeIDList    = make([]data.QuestionID, 0, len(excludeIDStrList))
-	)
-
-	for _, excludeIDStr := range excludeIDStrList {
-		if excludeIDStr == "" {
-			continue
-		}
-
-		id, err := data.NewQuestionIDFromStr(excludeIDStr)
+func (bg BodyGenerator) GetRandomQuestion(excludeIDStr string) ([]byte, error) {
+	excludeIDList := []data.QuestionID{}
+	if excludeIDStr != "" {
+		decodedExcludeIDListStr, err := url.QueryUnescape(excludeIDStr)
 		if err != nil {
 			return nil, err
 		}
 
-		excludeIDList = append(excludeIDList, id)
+		err = json.Unmarshal([]byte(decodedExcludeIDListStr), &excludeIDList)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	question, err := data.GetQuestioner().GetRandomQuestion(excludeIDList)
@@ -75,8 +70,19 @@ func (bg BodyGenerator) GetRandomQuestion(excludeIDCSV string) ([]byte, error) {
 	return j, nil
 }
 
-func (bg BodyGenerator) GetAnswerHandler(idStr string, request AnswerRequest) ([]byte, error) {
+func (bg BodyGenerator) GetAnswerHandler(idStr, answerStr string) ([]byte, error) {
 	id, err := data.NewQuestionIDFromStr(idStr)
+	if err != nil {
+		return nil, err
+	}
+
+	decodedAnswerStr, err := url.QueryUnescape(answerStr)
+	if err != nil {
+		return nil, err
+	}
+
+	request := AnswerRequest{}
+	err = json.Unmarshal([]byte(decodedAnswerStr), &request)
 	if err != nil {
 		return nil, err
 	}

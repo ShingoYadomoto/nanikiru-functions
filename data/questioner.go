@@ -34,12 +34,18 @@ func GetQuestioner() *Questioner {
 	return nanikiruQuestioner
 }
 
+var ErrNotFound = errors.New("err: Not Found")
+
 func (q *Questioner) GetRandomQuestion(excludeIDList []QuestionID) (*Question, error) {
 	var (
 		max          = len(q.data)
 		maxfailCount = max - len(excludeIDList)
 		excludeIDMap = map[QuestionID]struct{}{}
 	)
+
+	if max == len(excludeIDList) {
+		return nil, ErrNotFound
+	}
 
 	for _, excludeID := range excludeIDList {
 		excludeIDMap[excludeID] = struct{}{}
@@ -61,8 +67,6 @@ func (q *Questioner) GetRandomQuestion(excludeIDList []QuestionID) (*Question, e
 		return &ret, nil
 	}
 }
-
-var ErrNotFound = errors.New("err: Not Found")
 
 func (q *Questioner) GetQuestion(id QuestionID) (*Question, error) {
 	if d, ok := q.data[id]; ok {
