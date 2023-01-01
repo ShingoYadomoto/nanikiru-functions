@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/data"
 	"github.com/aws/aws-lambda-go/events"
@@ -118,11 +119,17 @@ func (h Handler) GetAnswerHandler(rw http.ResponseWriter, r *http.Request) {
 	h.response(rw, func() ([]byte, error) {
 		var (
 			idStr     = mux.Vars(r)[questionIDQueryKey]
-			answerStr = mux.Vars(r)[answerQueryKey]
-			request   = AnswerRequest{}
+			answerStr = r.URL.Query().Get(answerQueryKey)
+
+			request = AnswerRequest{}
 		)
 
-		err := json.Unmarshal([]byte(answerStr), &request)
+		decodedAnswerStr, err := url.QueryUnescape(answerStr)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(decodedAnswerStr), &request)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +147,12 @@ func (h Handler) GetAnswerLambdaHandler(ctx context.Context, request events.APIG
 			request   = AnswerRequest{}
 		)
 
-		err := json.Unmarshal([]byte(answerStr), &request)
+		decodedAnswerStr, err := url.QueryUnescape(answerStr)
+		if err != nil {
+			return nil, err
+		}
+
+		err = json.Unmarshal([]byte(decodedAnswerStr), &request)
 		if err != nil {
 			return nil, err
 		}
