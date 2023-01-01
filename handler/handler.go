@@ -29,6 +29,7 @@ type (
 		UserAnswer QuestionPai `json:"userAnswer"`
 	}
 	AnswerResponse struct {
+		Page          uint          `json:"page"`
 		IsCorrect     bool          `json:"isCorrect"`
 		CorrectAnswer []QuestionPai `json:"correctAnswer"`
 	}

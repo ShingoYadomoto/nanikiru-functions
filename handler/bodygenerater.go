@@ -116,6 +116,7 @@ func (bg BodyGenerator) GetAnswerHandler(idStr, answerStr string) ([]byte, error
 	}
 
 	j, err := json.Marshal(AnswerResponse{
+		Page:          correctAnswer.Page,
 		IsCorrect:     isCorrect,
 		CorrectAnswer: answer,
 	})
