@@ -39,7 +39,6 @@ var ErrNotFound = errors.New("err: Not Found")
 func (q *Questioner) GetRandomQuestion(excludeIDList []QuestionID) (*Question, error) {
 	var (
 		max          = len(q.data)
-		maxfailCount = max - len(excludeIDList)
 		excludeIDMap = map[QuestionID]struct{}{}
 	)
 
@@ -51,14 +50,15 @@ func (q *Questioner) GetRandomQuestion(excludeIDList []QuestionID) (*Question, e
 		excludeIDMap[excludeID] = struct{}{}
 	}
 
+	failCount := 0
 	for {
-		if maxfailCount == 0 {
+		if failCount == max {
 			return nil, errors.New("over max fail count")
 		}
 
 		randomID := QuestionID(rand.Intn(max)) + 1
 		if _, ng := excludeIDMap[randomID]; ng {
-			maxfailCount--
+			failCount++
 			continue
 		}
 
