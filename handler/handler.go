@@ -1,12 +1,13 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/data"
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/gorilla/mux"
 )
 
@@ -68,127 +69,83 @@ func (h Handler) response(rw http.ResponseWriter, f func() ([]byte, error)) {
 	}
 }
 
-func (h Handler) convertPaiList(pl []data.Pai) ([]QuestionPai, error) {
-	paiList := make([]QuestionPai, len(pl))
-	for i, parsedPai := range pl {
+func (h Handler) responseLambda(f func() ([]byte, error)) (*events.APIGatewayProxyResponse, error) {
+	headter := map[string]string{"Content-Type": "application/json"}
 
-		idx, err := parsedPai.Index.ToUint8()
-		if err != nil {
-			return nil, err
-		}
+	b, err := f()
+	if err != nil {
+		log.Printf("failed to get byte data. err: %s", err.Error())
 
-		paiList[i] = QuestionPai{
-			Type:    parsedPai.Type,
-			Index:   idx,
-			IsFolou: parsedPai.IsFolou,
-			IsBonus: parsedPai.IsBonus,
-		}
+		return &events.APIGatewayProxyResponse{
+			StatusCode: http.StatusInternalServerError,
+			Headers:    headter,
+		}, err
 	}
 
-	return paiList, nil
+	return &events.APIGatewayProxyResponse{
+		StatusCode: 200,
+		Headers:    headter,
+		Body:       string(b),
+	}, nil
 }
 
 const excludeIDQueryKey = "exclude_id"
 
 func (h Handler) GetRandomQuestionHandler(rw http.ResponseWriter, r *http.Request) {
 	h.response(rw, func() ([]byte, error) {
-		var (
-			query            = r.URL.Query()
-			excludeIDCSV     = query.Get(excludeIDQueryKey)
-			excludeIDStrList = strings.Split(excludeIDCSV, ",")
-			excludeIDList    = make([]data.QuestionID, 0, len(excludeIDStrList))
-		)
+		excludeIDCSV := r.URL.Query().Get(excludeIDQueryKey)
 
-		for _, excludeIDStr := range excludeIDStrList {
-			if excludeIDStr == "" {
-				continue
-			}
-
-			id, err := data.NewQuestionIDFromStr(excludeIDStr)
-			if err != nil {
-				return nil, err
-			}
-
-			excludeIDList = append(excludeIDList, id)
-		}
-
-		question, err := data.GetQuestioner().GetRandomQuestion(excludeIDList)
-		if err != nil {
-			return nil, err
-		}
-
-		parsedPaiList, err := question.Hands.Parse()
-		if err != nil {
-			return nil, err
-		}
-
-		paiList, err := h.convertPaiList(parsedPaiList)
-		if err != nil {
-			return nil, err
-		}
-
-		j, err := json.Marshal(QuestionResponse{
-			ID:      question.ID,
-			PaiList: paiList,
-			Page:    question.Page,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return j, nil
+		bg := BodyGenerator{}
+		return bg.GetRandomQuestion(excludeIDCSV)
 	})
 }
 
-func (h Handler) PostAnswerHandler(rw http.ResponseWriter, r *http.Request) {
+func (h Handler) GetRandomQuestionLambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	return h.responseLambda(func() ([]byte, error) {
+		excludeIDCSV := request.QueryStringParameters[excludeIDQueryKey]
+
+		bg := BodyGenerator{}
+		return bg.GetRandomQuestion(excludeIDCSV)
+	})
+}
+
+const (
+	questionIDQueryKey = "question_id"
+	answerQueryKey     = "answer"
+)
+
+func (h Handler) GetAnswerHandler(rw http.ResponseWriter, r *http.Request) {
 	h.response(rw, func() ([]byte, error) {
-		id, err := data.NewQuestionIDFromStr(mux.Vars(r)["question_id"])
+		var (
+			idStr     = mux.Vars(r)[questionIDQueryKey]
+			answerStr = mux.Vars(r)[answerQueryKey]
+			request   = AnswerRequest{}
+		)
+
+		err := json.Unmarshal([]byte(answerStr), &request)
 		if err != nil {
 			return nil, err
 		}
 
-		var request AnswerRequest
-		err = json.NewDecoder(r.Body).Decode(&request)
+		bg := BodyGenerator{}
+		return bg.GetAnswerHandler(idStr, request)
+	})
+}
+
+func (h Handler) GetAnswerLambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
+	return h.responseLambda(func() ([]byte, error) {
+		var (
+			idStr     = request.QueryStringParameters[questionIDQueryKey]
+			answerStr = request.QueryStringParameters[answerQueryKey]
+			request   = AnswerRequest{}
+		)
+
+		err := json.Unmarshal([]byte(answerStr), &request)
 		if err != nil {
 			return nil, err
 		}
 
-		userAnswerPai, err := data.NewPai(request.UserAnswer.Type, request.UserAnswer.Index, request.UserAnswer.IsFolou, request.UserAnswer.IsBonus)
-		if err != nil {
-			return nil, err
-		}
-
-		correctAnswer, err := data.GetQuestioner().GetQuestion(id)
-		if err != nil {
-			return nil, err
-		}
-
-		parsedPaiList, err := correctAnswer.Answer.Parse()
-		if err != nil {
-			return nil, err
-		}
-
-		var isCorrect bool
-		for _, correctPai := range parsedPaiList {
-			if correctPai.Equal(userAnswerPai) {
-				isCorrect = true
-				break
-			}
-		}
-
-		answer, err := h.convertPaiList(parsedPaiList)
-		if err != nil {
-			return nil, err
-		}
-
-		j, err := json.Marshal(AnswerResponse{
-			IsCorrect:     isCorrect,
-			CorrectAnswer: answer,
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return j, nil
+		bg := BodyGenerator{}
+		return bg.GetAnswerHandler(idStr, request)
 	})
 }
