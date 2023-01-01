@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/ShingoYadomoto/nanikiru-functions/data"
 	"github.com/aws/aws-lambda-go/events"
@@ -33,18 +34,23 @@ type (
 	}
 )
 
+var commonHeader = map[string]string{
+	"Content-Type":                     "application/json",
+	"Access-Control-Allow-Origin":      os.Getenv("ALLOW_ORIGIN"),
+	"Access-Control-Allow-Headers":     "Content-Type",
+	"Access-Control-Allow-Credentials": "true",
+	"Access-Control-Allow-Methods":     "GET,OPTIONS",
+}
+
 type Handler struct{}
 
-// for development
 func (h Handler) CORSMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Content-Type", "application/json")
+		for k, v := range commonHeader {
+			w.Header().Set(k, v)
+		}
 
-		// preflight用に200でいったん返す
-		if r.Method == "OPTIONS" {
+		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -59,7 +65,6 @@ func (h Handler) response(rw http.ResponseWriter, f func() ([]byte, error)) {
 		log.Printf("failed to get byte data. err: %s", err.Error())
 	}
 
-	rw.Header().Set("Content-Type", "application/json")
 	_, err = rw.Write(b)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -67,8 +72,13 @@ func (h Handler) response(rw http.ResponseWriter, f func() ([]byte, error)) {
 	}
 }
 
-func (h Handler) responseLambda(f func() ([]byte, error)) (*events.APIGatewayProxyResponse, error) {
-	headter := map[string]string{"Content-Type": "application/json"}
+func (h Handler) responseLambda(httpMethod string, f func() ([]byte, error)) (*events.APIGatewayProxyResponse, error) {
+	if httpMethod == http.MethodOptions {
+		return &events.APIGatewayProxyResponse{
+			StatusCode: http.StatusOK,
+			Headers:    commonHeader,
+		}, nil
+	}
 
 	b, err := f()
 	if err != nil {
@@ -76,13 +86,13 @@ func (h Handler) responseLambda(f func() ([]byte, error)) (*events.APIGatewayPro
 
 		return &events.APIGatewayProxyResponse{
 			StatusCode: http.StatusInternalServerError,
-			Headers:    headter,
+			Headers:    commonHeader,
 		}, err
 	}
 
 	return &events.APIGatewayProxyResponse{
-		StatusCode: 200,
-		Headers:    headter,
+		StatusCode: http.StatusOK,
+		Headers:    commonHeader,
 		Body:       string(b),
 	}, nil
 }
@@ -99,7 +109,7 @@ func (h Handler) GetRandomQuestionHandler(rw http.ResponseWriter, r *http.Reques
 }
 
 func (h Handler) GetRandomQuestionLambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	return h.responseLambda(func() ([]byte, error) {
+	return h.responseLambda(request.HTTPMethod, func() ([]byte, error) {
 		excludeIDStr := request.QueryStringParameters[excludeIDQueryKey]
 
 		bg := BodyGenerator{}
@@ -125,7 +135,7 @@ func (h Handler) GetAnswerHandler(rw http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) GetAnswerLambdaHandler(ctx context.Context, request events.APIGatewayProxyRequest) (*events.APIGatewayProxyResponse, error) {
-	return h.responseLambda(func() ([]byte, error) {
+	return h.responseLambda(request.HTTPMethod, func() ([]byte, error) {
 		var (
 			idStr     = request.QueryStringParameters[questionIDQueryKey]
 			answerStr = request.QueryStringParameters[answerQueryKey]
