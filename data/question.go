@@ -8,10 +8,12 @@ type (
 	QuestionID uint
 
 	Question struct {
-		ID     QuestionID
-		Hands  Hand
-		Answer Answer
-		Page   uint
+		ID        QuestionID
+		Hands     Hand
+		Answer    PaiStr
+		Page      uint
+		Situation *Situation
+		Comment   string
 	}
 )
 
@@ -82,5 +84,20 @@ func newData() []Question {
 		{Hands: "34788m222344p678s", Answer: "4p", Page: 152},
 		{Hands: "34688m222344567p", Answer: "6m", Page: 153},
 		{Hands: "788m33444556p123s", Answer: "7m", Page: 154},
+		{Hands: "77m3456789p22s789s", Answer: "7m", Page: 168},
+		{Hands: "77m11345678p3478s", Answer: "1p", Page: 168},
+		{Hands: "77m22456789p1134s", Answer: "1s", Page: 169},
+		{Hands: "3478m34566p33678s", Answer: "6p", Page: 170},
+		{Hands: "34m34566p2355678s", Answer: "2s", Page: 172},
+		{Hands: "67m45677p2355678s", Answer: "2s", Page: 173},
+		{Hands: "67m56788p4456677s", Answer: "8p", Page: 173},
+		{Hands: "334m678p35567778s", Answer: "3m", Page: 174},
+		{Hands: "788m234466p22678s", Answer: "8m", Page: 175, Situation: &Situation{Bonus: "2s"}},
+		{Hands: "33445*6m5678p4456s", Answer: "4s", Page: 176},
+		{Hands: "466m34799p234668s", Answer: "9p", Page: 178, Comment: "とりあえず内寄せ"},
+		{Hands: "579m34678p233444s", Answer: "9m", Page: 179, Comment: "とりあえず内寄せ"},
+		{Hands: "23345667p223789s", Answer: "3s", Page: 180, Situation: &Situation{Bonus: "2s"}, Comment: "ウィング8枚系 ドラ固定 ピンズ中ぶくれ2つを活かす"},
+		{Hands: "45688m222344p677s", Answer: "7s", Page: 184, Situation: &Situation{Other: "アガリトップ"}, Comment: "チー2倍速、ポン4倍速 受け入れ最大がそのまま正解"},
+		{Hands: "45688m222344p788s", Answer: "4p", Page: 185, Situation: &Situation{Other: "アガリトップ"}, Comment: "チー2倍速、ポン4倍速 9sの受け入れはカウントしない"},
 	}
 }

@@ -5,11 +5,15 @@ import (
 	"strings"
 )
 
-type Answer string
+type PaiStr string
 
-func (ans Answer) Parse() ([]Pai, error) {
+func (ps PaiStr) Parse() ([]Pai, error) {
+	if ps == "" {
+		return []Pai{}, nil
+	}
+
 	var (
-		paiStrList = strings.Split(string(ans), ",")
+		paiStrList = strings.Split(string(ps), ",")
 		ret        = make([]Pai, len(paiStrList))
 	)
 

@@ -18,11 +18,25 @@ type (
 		IsBonus bool         `json:"isBonus"`
 	}
 
+	QuestionField struct {
+		Fan     data.Fan         `json:"fan"`
+		Inning  data.FieldInning `json:"inning"`
+		Stack   uint             `json:"stack"`
+		Deposit uint             `json:"deposit"`
+	}
+
+	QuestionSituation struct {
+		Bonus     []QuestionPai `json:"bonus"`
+		Field     QuestionField `json:"field"`
+		PlayerFan data.Fan      `json:"playerFan"`
+		Other     string        `json:"other"`
+	}
+
 	QuestionResponse struct {
-		ID        data.QuestionID `json:"id"`
-		PaiList   []QuestionPai   `json:"paiList"`
-		Situation string          `json:"situation"`
-		Page      uint            `json:"page"`
+		ID        data.QuestionID    `json:"id"`
+		PaiList   []QuestionPai      `json:"paiList"`
+		Page      uint               `json:"page"`
+		Situation *QuestionSituation `json:"situation"`
 	}
 
 	AnswerRequest struct {
@@ -32,6 +46,7 @@ type (
 		Page          uint          `json:"page"`
 		IsCorrect     bool          `json:"isCorrect"`
 		CorrectAnswer []QuestionPai `json:"correctAnswer"`
+		Comment       string        `json:"comment"`
 	}
 )
 

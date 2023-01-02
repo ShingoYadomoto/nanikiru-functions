@@ -58,10 +58,36 @@ func (bg BodyGenerator) GetRandomQuestion(excludeIDStr string) ([]byte, error) {
 		return nil, err
 	}
 
+	var situation *QuestionSituation
+	if question.Situation != nil {
+		bonusList, err := question.Situation.Bonus.Parse()
+		if err != nil {
+			return nil, err
+		}
+
+		convertedBonusList, err := bg.convertPaiList(bonusList)
+		if err != nil {
+			return nil, err
+		}
+
+		situation = &QuestionSituation{
+			Bonus: convertedBonusList,
+			Field: QuestionField{
+				Fan:     question.Situation.Field.Fan,
+				Inning:  question.Situation.Field.Inning,
+				Stack:   question.Situation.Field.Stack,
+				Deposit: question.Situation.Field.Deposit,
+			},
+			PlayerFan: question.Situation.PlayerFan,
+			Other:     question.Situation.Other,
+		}
+	}
+
 	j, err := json.Marshal(QuestionResponse{
-		ID:      question.ID,
-		PaiList: paiList,
-		Page:    question.Page,
+		ID:        question.ID,
+		PaiList:   paiList,
+		Page:      question.Page,
+		Situation: situation,
 	})
 	if err != nil {
 		return nil, err
@@ -116,9 +142,10 @@ func (bg BodyGenerator) GetAnswerHandler(idStr, answerStr string) ([]byte, error
 	}
 
 	j, err := json.Marshal(AnswerResponse{
-		Page:          correctAnswer.Page,
 		IsCorrect:     isCorrect,
 		CorrectAnswer: answer,
+		Page:          correctAnswer.Page,
+		Comment:       correctAnswer.Comment,
 	})
 	if err != nil {
 		return nil, err
