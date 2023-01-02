@@ -36,7 +36,7 @@ type (
 		ID        data.QuestionID    `json:"id"`
 		PaiList   []QuestionPai      `json:"paiList"`
 		Page      uint               `json:"page"`
-		Situation *QuestionSituation `json:"situation"`
+		Situation *QuestionSituation `json:"situation,omitempty"`
 	}
 
 	AnswerRequest struct {
