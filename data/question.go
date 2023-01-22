@@ -71,7 +71,7 @@ func newData() []Question {
 		{Hands: "67m34599p1123334s", Answer: "3s", Page: 133},
 		{Hands: "677m222334p115*67s", Answer: "7m", Page: 134},
 		{Hands: "677m111223p115*67s", Answer: "7m", Page: 134},
-		{Hands: "789m33445667p557s", Answer: "7s", Page: 136},
+		{Hands: "789m33445667p557s", Answer: "7s", Page: 136, Comment: "一盃口含み 6pより受け入れ4枚ロスだが、良型"},
 		{Hands: "789m11223445p557s", Answer: "7s", Page: 137},
 		{Hands: "789m1122345*5p557s", Answer: "5p", Page: 137},
 		{Hands: "233456778p33488s", Answer: "3s", Page: 138, Comment: "ウイング9枚系 3s切りで受け入れ最大・必ず平和になる"},
